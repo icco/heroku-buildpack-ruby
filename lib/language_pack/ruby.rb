@@ -146,13 +146,14 @@ private
   def ruby_version
     instrument 'ruby.ruby_version' do
       return @ruby_version if @ruby_version_run
-
+      puts "== finding ruby version"
       @ruby_version_run     = true
       @ruby_version_set     = false
 
       old_system_path = "/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
       @ruby_version = run_stdout("env PATH=#{bundler_path}/bin:#{old_system_path} GEM_PATH=#{bundler_path} bundle platform --ruby").chomp
 
+      puts "== @ruby_version: #{@ruby_version.inspect}"
       if @ruby_version == "No ruby version specified"
         if new_app?
           @ruby_version = DEFAULT_RUBY_VERSION
@@ -258,10 +259,12 @@ private
       return false unless ruby_version
 
       invalid_ruby_version_message = <<ERROR
-Invalid RUBY_VERSION specified: #{ruby_version}
+Invalid RUBY_VERSION specified: #{ruby_version.inspect}
 Valid versions: #{ruby_versions.join(", ")}
 ERROR
 
+
+      puts "== build_ruby?: #{build_ruby?}"
       if build_ruby?
         FileUtils.mkdir_p(build_ruby_path)
         Dir.chdir(build_ruby_path) do
@@ -275,6 +278,7 @@ ERROR
 
       FileUtils.mkdir_p(slug_vendor_ruby)
       Dir.chdir(slug_vendor_ruby) do
+        puts "== fetching ruby"
         instrument "ruby.fetch_ruby" do
           if ruby_version_rbx?
             file     = "#{ruby_version}.tar.bz2"
@@ -301,6 +305,8 @@ ERROR_MSG
           end
         end
       end
+
+
       error invalid_ruby_version_message unless $?.success?
 
       app_bin_dir = "bin"
